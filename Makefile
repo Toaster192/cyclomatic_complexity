@@ -29,5 +29,10 @@ $(PROG): cyc_complexity_plugin.c
 run: $(PROG)
 	$(CC) -fplugin=$(CURDIR)/$(PROG) test.c -o test -O2 -fdump-tree-all -fdump-ipa-all #-fplugin-arg-cyc_complexity_plugin-log_file
 
+run_o: $(PROG)
+	$(CC) -fplugin=$(CURDIR)/$(PROG) misc/optimalization_example.c -o opt0 -O0 -fdump-tree-all -fdump-ipa-all
+	$(CC) -fplugin=$(CURDIR)/$(PROG) misc/optimalization_example.c -o opt2 -O2 -fdump-tree-all -fdump-ipa-all
+
 clean:
 	$(RM) -f $(PROG) test test.c.* test.ltrans0.* test.wpa.* test_*.c.* test_* test.cyc_complexity
+	$(RM) -f opt0 opt2 optimalization_example.c.* opt0.ltrans0.* opt2.ltrans0.* opt0.wpa.* opt2.wpa.* optimalization_example_*.c.* opt0_* opt2_* test.cyc_complexity
