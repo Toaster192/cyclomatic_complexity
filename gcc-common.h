@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef GCC_COMMON_H_INCLUDED
 #define GCC_COMMON_H_INCLUDED
 
@@ -21,11 +22,7 @@
 #include "rtl.h"
 #include "tm_p.h"
 #include "flags.h"
-//#include "insn-attr.h"
-//#include "insn-config.h"
-//#include "insn-flags.h"
 #include "hard-reg-set.h"
-//#include "recog.h"
 #include "output.h"
 #include "except.h"
 #include "function.h"
@@ -36,7 +33,6 @@
 #include "basic-block.h"
 #include "intl.h"
 #include "ggc.h"
-//#include "regs.h"
 #include "timevar.h"
 
 #include "params.h"
@@ -51,18 +47,12 @@
 #include "memmodel.h"
 #endif
 #include "emit-rtl.h"
-//#include "reload.h"
-//#include "ira.h"
-//#include "dwarf2asm.h"
 #include "debug.h"
 #include "target.h"
 #include "langhooks.h"
 #include "cfgloop.h"
-//#include "hosthooks.h"
 #include "cgraph.h"
 #include "opts.h"
-//#include "coverage.h"
-//#include "value-prof.h"
 
 #if BUILDING_GCC_VERSION == 4005
 #include <sys/mman.h>
@@ -74,8 +64,13 @@
 #endif
 
 #if BUILDING_GCC_VERSION >= 4006
-//#include "c-tree.h"
-//#include "cp/cp-tree.h"
+/*
+ * The c-family headers were moved into a subdirectory in GCC version
+ * 4.7, but most plugin-building users of GCC 4.6 are using the Debian
+ * or Ubuntu package, which has an out-of-tree patch to move this to the
+ * same location as found in 4.7 and later:
+ * https://sources.debian.net/src/gcc-4.6/4.6.3-14/debian/patches/pr45078.diff/
+ */
 #include "c-family/c-common.h"
 #else
 #include "c-common.h"
@@ -94,15 +89,17 @@
 #endif
 
 #include "diagnostic.h"
-//#include "tree-diagnostic.h"
 #include "tree-dump.h"
 #include "tree-pass.h"
 #if BUILDING_GCC_VERSION >= 4009
 #include "pass_manager.h"
 #endif
-//#include "df.h"
 #include "predict.h"
 #include "ipa-utils.h"
+
+#if BUILDING_GCC_VERSION >= 8000
+#include "stringpool.h"
+#endif
 
 #if BUILDING_GCC_VERSION >= 4009
 #include "attribs.h"
@@ -111,7 +108,6 @@
 #include "internal-fn.h"
 #include "gimple-expr.h"
 #include "gimple-fold.h"
-//#include "diagnostic-color.h"
 #include "context.h"
 #include "tree-ssa-alias.h"
 #include "tree-ssa.h"
@@ -137,15 +133,7 @@
 #include "ssa-iterators.h"
 #endif
 
-//#include "lto/lto.h"
-#if BUILDING_GCC_VERSION >= 4007
-//#include "data-streamer.h"
-#else
-//#include "lto-streamer.h"
-#endif
-//#include "lto-compress.h"
 #if BUILDING_GCC_VERSION >= 5000
-//#include "lto-section-names.h"
 #include "builtins.h"
 #endif
 
@@ -162,9 +150,12 @@ void print_gimple_expr(FILE *, gimple, int, int);
 void dump_gimple_stmt(pretty_printer *, gimple, int, int);
 #endif
 
-#define __unused __attribute__((unused))
+#ifndef __unused
+#define __unused __attribute__((__unused__))
+#endif
+#ifndef __visible
 #define __visible __attribute__((visibility("default")))
-#define __weak __attribute__((weak))
+#endif
 
 #define DECL_NAME_POINTER(node) IDENTIFIER_POINTER(DECL_NAME(node))
 #define DECL_NAME_LENGTH(node) IDENTIFIER_LENGTH(DECL_NAME(node))
@@ -187,13 +178,6 @@ static inline tree build_const_char_string(int len, const char *str)
 	TREE_READONLY(cstr) = 1;
 	TREE_STATIC(cstr) = 1;
 	return cstr;
-}
-
-static inline void error_gcc_version(struct plugin_gcc_version *version)
-{
-	error(G_("incompatible gcc/plugin versions: need %s %s %s %s but have %s %s %s %s"),
-	      gcc_version.basever, gcc_version.datestamp, gcc_version.devphase, gcc_version.revision,
-	      version->basever, version->datestamp, version->devphase, version->revision);
 }
 
 #define PASS_INFO(NAME, REF, ID, POS)		\
@@ -230,7 +214,6 @@ static inline bool gimple_call_builtin_p(gimple stmt, enum built_in_function cod
 	fndecl = gimple_call_fndecl(stmt);
 	if (!fndecl || DECL_BUILT_IN_CLASS(fndecl) != BUILT_IN_NORMAL)
 		return false;
-//	print_node(stderr, "pax", fndecl, 4);
 	return DECL_FUNCTION_CODE(fndecl) == code;
 }
 
@@ -404,23 +387,6 @@ static inline bool gimple_store_p(gimple gs)
 static inline void gimple_init_singleton(gimple g __unused)
 {
 }
-
-enum expand_modifier {
-	EXPAND_NORMAL = 0,
-	EXPAND_STACK_PARM,
-	EXPAND_SUM,
-	EXPAND_CONST_ADDRESS,
-	EXPAND_INITIALIZER,
-	EXPAND_WRITE,
-	EXPAND_MEMORY
-};
-
-rtx expand_expr_real(tree, rtx, enum machine_mode, enum expand_modifier, rtx *);
-
-static inline rtx expand_expr(tree exp, rtx target, enum machine_mode mode, enum expand_modifier modifier)
-{
-	return expand_expr_real(exp, target, mode, modifier, NULL);
-}
 #endif
 
 #if BUILDING_GCC_VERSION == 4007 || BUILDING_GCC_VERSION == 4008
@@ -428,13 +394,6 @@ static inline struct cgraph_node *cgraph_alias_target(struct cgraph_node *n)
 {
 	return cgraph_alias_aliased_node(n);
 }
-#endif
-
-#if BUILDING_GCC_VERSION >= 4007 && BUILDING_GCC_VERSION <= 4009
-#define cgraph_create_edge(caller, callee, call_stmt, count, freq, nest) \
-	cgraph_create_edge((caller), (callee), (call_stmt), (count), (freq))
-#define cgraph_create_edge_including_clones(caller, callee, old_call_stmt, call_stmt, count, freq, nest, reason) \
-	cgraph_create_edge_including_clones((caller), (callee), (old_call_stmt), (call_stmt), (count), (freq), (reason))
 #endif
 
 #if BUILDING_GCC_VERSION <= 4008
@@ -594,28 +553,6 @@ static inline const greturn *as_a_const_greturn(const_gimple stmt)
 #define create_var_ann(var)
 #define TODO_dump_func 0
 #define TODO_dump_cgraph 0
-
-#define VEC(T, A) vec<T, va_##A>
-#define VEC_safe_push(T, A, V, O) vec_safe_push((V), (O));
-#endif
-
-#if BUILDING_GCC_VERSION == 4008 || BUILDING_GCC_VERSION == 4009
-enum expand_modifier {
-	EXPAND_NORMAL = 0,
-	EXPAND_STACK_PARM,
-	EXPAND_SUM,
-	EXPAND_CONST_ADDRESS,
-	EXPAND_INITIALIZER,
-	EXPAND_WRITE,
-	EXPAND_MEMORY
-};
-
-rtx expand_expr_real(tree, rtx, enum machine_mode, enum expand_modifier, rtx *, bool);
-
-static inline rtx expand_expr(tree exp, rtx target, enum machine_mode mode, enum expand_modifier modifier)
-{
-	return expand_expr_real(exp, target, mode, modifier, NULL, false);
-}
 #endif
 
 #if BUILDING_GCC_VERSION <= 4009
@@ -766,8 +703,6 @@ inline bool is_a_helper<const gassign *>::test(const_gimple gs)
 #define TODO_verify_stmts TODO_verify_il
 #define TODO_verify_rtl_sharing TODO_verify_il
 
-//#define TREE_INT_CST_HIGH(NODE) ({ TREE_INT_CST_EXT_NUNITS(NODE) > 1 ? (unsigned HOST_WIDE_INT)TREE_INT_CST_ELT(NODE, 1) : 0; })
-
 #define INSN_DELETED_P(insn) (insn)->deleted()
 
 static inline const char *get_decl_section_name(const_tree decl)
@@ -785,10 +720,23 @@ static inline const char *get_decl_section_name(const_tree decl)
 #define varpool_get_node(decl) varpool_node::get(decl)
 #define dump_varpool_node(file, node) (node)->dump(file)
 
-#define cgraph_create_edge(caller, callee, call_stmt, count, freq, nest) \
+#if BUILDING_GCC_VERSION >= 8000
+#define cgraph_create_edge(caller, callee, call_stmt, count, freq) \
+	(caller)->create_edge((callee), (call_stmt), (count))
+
+#define cgraph_create_edge_including_clones(caller, callee,	\
+		old_call_stmt, call_stmt, count, freq, reason)	\
+	(caller)->create_edge_including_clones((callee),	\
+		(old_call_stmt), (call_stmt), (count), (reason))
+#else
+#define cgraph_create_edge(caller, callee, call_stmt, count, freq) \
 	(caller)->create_edge((callee), (call_stmt), (count), (freq))
-#define cgraph_create_edge_including_clones(caller, callee, old_call_stmt, call_stmt, count, freq, nest, reason) \
-	(caller)->create_edge_including_clones((callee), (old_call_stmt), (call_stmt), (count), (freq), (reason))
+
+#define cgraph_create_edge_including_clones(caller, callee,	\
+		old_call_stmt, call_stmt, count, freq, reason)	\
+	(caller)->create_edge_including_clones((callee),	\
+		(old_call_stmt), (call_stmt), (count), (freq), (reason))
+#endif
 
 typedef struct cgraph_node *cgraph_node_ptr;
 typedef struct cgraph_edge *cgraph_edge_p;
@@ -1018,6 +966,11 @@ static inline void debug_gimple_stmt(const_gimple s)
 #if BUILDING_GCC_VERSION >= 7000
 #define get_inner_reference(exp, pbitsize, pbitpos, poffset, pmode, punsignedp, preversep, pvolatilep, keep_aligning)	\
 	get_inner_reference(exp, pbitsize, pbitpos, poffset, pmode, punsignedp, preversep, pvolatilep)
+#endif
+
+#if BUILDING_GCC_VERSION < 7000
+#define SET_DECL_ALIGN(decl, align)	DECL_ALIGN(decl) = (align)
+#define SET_DECL_MODE(decl, mode)	DECL_MODE(decl) = (mode)
 #endif
 
 #endif

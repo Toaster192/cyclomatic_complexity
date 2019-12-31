@@ -15,7 +15,7 @@ The complexity M is then defined as `M = E − N + 2P` where
 Compiling & Usage
 -----------------
 
-##### gcc 4.5 - 5:
+##### gcc 4.5 - 9.2:
 
 ```shell
 $ make clean ; make

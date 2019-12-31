@@ -17,7 +17,7 @@
  * Options:
  * -fplugin-arg-cyc_complexity_plugin-log_file
  *
- * Usage (4.5 - 6):
+ * Usage (4.5 - 9.2):
  * $ make clean; make run
  */
 
@@ -38,7 +38,8 @@ static unsigned int cyc_complexity_execute(void)
 	int complexity;
 	expanded_location xloc;
 
-	/* M = E - N + 2P */
+	/* M = E - N + 2P
+	 * where P is always 1 for a single function */
 	complexity = n_edges_for_fn(cfun) - n_basic_blocks_for_fn(cfun) + 2;
 
 	xloc = expand_location(DECL_SOURCE_LOCATION(current_function_decl));
@@ -87,7 +88,7 @@ __visible int plugin_init(struct plugin_name_args *plugin_info, struct plugin_gc
 	PASS_INFO(cyc_complexity, "ssa", 1, PASS_POS_INSERT_AFTER);
 
 	if (!plugin_default_version_check(version, &gcc_version)) {
-		error_gcc_version(version);
+		error(G_("incompatible gcc/plugin versions"));
 		return 1;
 	}
 
